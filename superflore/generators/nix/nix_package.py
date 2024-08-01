@@ -34,6 +34,8 @@ class NixPackage:
         rosinstall = _generate_rosinstall(name, repo.url,
                                           repo.get_release_tag(name), True)
 
+        print(rosinstall)
+
         normalized_name = NixPackage.normalize_name(name)
         version = get_pkg_version(distro, name)
         src_uri = rosinstall[0]['tar']['uri']

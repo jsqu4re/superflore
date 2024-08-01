@@ -800,6 +800,7 @@ def url_to_repo_org(url):
 
 def download_file(url, filename):
     # GitLab returns 403 when using the default urllib User-Agent
+    print(f"Downloading: {url}")
     request = urllib.request.Request(url, headers={
         'User-Agent': 'superflore/{}'.format(get_superflore_version())
     })
