@@ -1,6 +1,7 @@
 import hashlib
 import itertools
 import os
+import subprocess
 import re
 import tarfile
 from typing import Dict, Iterable, Set
@@ -38,11 +39,20 @@ class NixPackage:
 
         normalized_name = NixPackage.normalize_name(name)
         version = get_pkg_version(distro, name)
-        src_uri = rosinstall[0]['tar']['uri']
 
         archive_path = os.path.join(tar_dir, '{}-{}-{}.tar.gz'
                                     .format(self.normalize_name(name),
                                             version, distro.name))
+
+        src_uri = ""
+        mode = ""
+
+        if 'tar' in rosinstall[0].keys():
+            src_uri = rosinstall[0]['tar']['uri']
+            mode = "tar"
+        else:
+            src_uri = rosinstall[0]['git']['uri']
+            mode = "git"
 
         downloaded_archive = False
         if os.path.exists(archive_path):
@@ -50,12 +60,25 @@ class NixPackage:
         else:
             info("downloading archive version for package '{}'..."
                  .format(name))
-            retry_on_exception(download_file, src_uri, archive_path,
-                               retry_msg="network error downloading '{}'"
-                               .format(src_uri),
-                               error_msg="failed to download archive for '{}'"
-                               .format(name))
-            downloaded_archive = True
+
+            if mode == "tar":
+                retry_on_exception(download_file, src_uri, archive_path,
+                                retry_msg="network error downloading '{}'"
+                                .format(src_uri),
+                                error_msg="failed to download archive for '{}'"
+                                .format(name))
+                downloaded_archive = True
+
+            if mode == "git":
+                command = f"git archive --format=tar.gz --remote={src_uri} {rosinstall[0]['git']['version']} > {archive_path}"
+                print(command)
+                return_value = 1
+                retry = 0
+                while return_value != 0 and retry < 5:
+                    return_value = subprocess.run(command, shell = True, executable="/bin/bash").returncode
+                    retry += 1
+                if return_value == 0:
+                    downloaded_archive = True
 
         if downloaded_archive or archive_path not in sha256_cache:
             sha256_cache[archive_path] = hashlib.sha256(
@@ -64,10 +87,11 @@ class NixPackage:
 
         # We already have the archive, so try to extract package.xml from it.
         # This is much faster than downloading it from GitHub.
-        package_xml_regex = re.compile(r'^[^/]+/package\.xml$')
+        package_xml_regex = re.compile(r'^([^/]+/)?package\.xml$')
         package_xml = None
         archive = tarfile.open(archive_path, 'r|*')
         for file in archive:
+            print(file.name)
             if package_xml_regex.match(file.name):
                 package_xml = archive.extractfile(file).read()
                 break
