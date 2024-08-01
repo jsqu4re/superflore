@@ -120,7 +120,14 @@ def make_dir(dirname):
 def get_pkg_version(distro, pkg_name, **kwargs):
     pkg = distro.release_packages[pkg_name]
     repo = distro.repositories[pkg.repository_name].release_repository
-    maj_min_patch, deb_inc = repo.version.split('-')
+
+    maj_min_patch = repo.version
+    deb_inc = '0'
+
+    try:
+        maj_min_patch, deb_inc = repo.version.split('-')
+    except Exception as e:
+        print(f"Malformed version '{repo.version}': {e}")
     if deb_inc == '0':
         return maj_min_patch
     is_oe = kwargs.get('is_oe', False)
