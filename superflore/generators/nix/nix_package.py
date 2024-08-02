@@ -139,7 +139,7 @@ class NixPackage:
         self._derivation = NixExpression(
             name=normalized_name,
             version=version,
-            src_url=src_uri,
+            src_url=archive_path,
             src_sha256=src_sha256,
             description=metadata.description,
             licenses=map(NixLicense, metadata.upstream_license),

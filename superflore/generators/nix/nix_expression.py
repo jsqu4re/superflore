@@ -152,11 +152,7 @@ class NixExpression:
           pname = "ros-{distro_name}-{name}";
           version = "{version}";
 
-          src = fetchurl {{
-            url = "{src_url}";
-            name = "{src_name}";
-            sha256 = "{src_sha256}";
-          }};
+          src = {src_url};
 
           buildType = "{build_type}";
         ''').format(
