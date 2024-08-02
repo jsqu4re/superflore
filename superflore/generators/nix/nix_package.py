@@ -160,6 +160,10 @@ class NixPackage:
                 if d in self._all_pkgs \
                 else resolve_dep(d, 'nix')[0]
         except UnresolvedDependency:
+            if d.startswith("python3-"):
+                return (self.normalize_name(d.replace('python3-', 'python3Packages.')),)
+            if d.startswith("python-"):
+                return (self.normalize_name(d.replace('python-', 'pythonPackages.')),)
             self.unresolved_dependencies.add(d)
             return tuple()
 
